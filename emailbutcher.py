@@ -1,12 +1,12 @@
-import re                        # regular expression library to search for the IP and domain
-import requests                  # requests library to make HTTP requests
-import whois                     # whois library to get information about the domain
-from ipwhois import IPWhois      # obtain ISP from the IP address
-import dns.resolver              # dns.resolver library to get information about the domain
-import socket                    # socket library to get information about the domain
-from email import parser         # email.parser library to get information about the domain
-import sys                       # sys library to open file as command line argument
-import csv
+import re                               # regular expression library to search for the IP and domain
+import whois                            # whois library to get information about the domain
+from email import parser                # email.parser library to get information about the domain
+import sys                              # sys library to open file as command line argument
+import csv                              # open csv and search for matching registrar and print out details
+from difflib import get_close_matches   # needed a better way to search, this will find the closest match
+registrar_set = set()                   #initialize this set as it's used to see if whois has been searched yet
+
+
 
 def print_ipdomain(ip_addresses_set, domains_set):
     print("\n====== IP Addresses ======")
@@ -19,58 +19,131 @@ def print_ipdomain(ip_addresses_set, domains_set):
     for domain in domains_set:
         print("  ", domain)
 
-def who_is_search(domains_set, ip_addresses_set):
-    # use the Domains from the domain_set to search whois
-    print("\n====== Whois Domain Lookup ======")
+
+def who_is_search(domains_set, ip_addresses_set):        # use the Domains from the domain_set to search whois
+    global registrar_set
+    if registrar_set:                   # checks registrar_set and if it's already been populated it returns
+        return registrar_set            # and skips the the rest of the function so whois is not queried again
     registrar_set = set()
     for domain in domains_set:
-        whois_info = whois.whois(domain)
-        print("  Domain:", domain)
-        if whois_info.registrar is not None:              
-            registrar_set.add(whois_info.registrar)  #adds the registrar name to a set
-        print("    Registrar:", whois_info.registrar)
-        print("    Creation Date:", whois_info.creation_date)
-        print("    Expiration Date:", whois_info.expiration_date)
-        print("    Name Servers:", whois_info.name_servers)
-        print("    Status:", whois_info.status)
-        print("    Email:", whois_info.emails)
-        print("    Organization:", whois_info.org)
-        print("    Address:", whois_info.address)
-        print("    City:", whois_info.city)
-        print("    State:", whois_info.state)
-        print("    Zipcode:", whois_info.zipcode)
-        print("    Country:", whois_info.country) in ip_addresses_set
+        try:
+            whois_info = whois.whois(domain)
+            if whois_info.registrar is not None:
+                registrar_set.add(whois_info.registrar)  #adds the registrar name to a set
+        except whois.parser.PywhoisError:
+            pass # Simply skip domains that cause this error
+    pass
 
-    print("\n====== Whois IP Lookup ======")
+
+
     for ip_addr in ip_addresses_set:
         whois_info = whois.whois(ip_addr)
-        print("  IP:", ip_addr)
+
         if whois_info.registrar is not None:              
                 registrar_set.add(whois_info.registrar)  #adds the registrar name to a set
-        print("    Registrar:", whois_info.registrar)
-        print("    Creation Date:", whois_info.creation_date)
-        print("    Expiration Date:", whois_info.expiration_date)
-        print("    Name Servers:", whois_info.name_servers)
-        print("    Status:", whois_info.status)
-        print("    Email:", whois_info.emails)
-        print("    Organization:", whois_info.org)
-        print("    Address:", whois_info.address)
-        print("    City:", whois_info.city)
-        print("    State:", whois_info.state)
-        print("    Zipcode:", whois_info.zipcode)
-        print("    Country:", whois_info.country)
+
         return registrar_set
 
+def who_is_print(domains_set, ip_addresses_set):
+    global registrar_set
+    if registrar_set == set():
+        registrar_set = who_is_search(domains_set, ip_addresses_set) # this will run the who_is_search function if it hasn't been done (for saving to txt)
+    for ip_addr in ip_addresses_set:
+        try:
+            whois_info = whois.whois(ip_addr)
+            print("\n====== Whois IP Lookup ======")
+            print("  IP:", ip_addr)
+            print("    Registrar:", whois_info.registrar)
+            print("    Creation Date:", whois_info.creation_date)
+            print("    Expiration Date:", whois_info.expiration_date)
+            print("    Name Servers:", whois_info.name_servers)
+            print("    Status:", whois_info.status)
+            print("    Email:", whois_info.emails)
+            print("    Organization:", whois_info.org)
+            print("    Address:", whois_info.address)
+            print("    City:", whois_info.city)
+            print("    State:", whois_info.state)
+            print("    Zipcode:", whois_info.zipcode)
+            print("    Country:", whois_info.country) in ip_addresses_set
+        except whois.parser.PywhoisError:
+            print("\nNothing returned from WHOIS for that IP")
+            pass
+    for domain in domains_set:
+        try:
+            whois_info = whois.whois(domain)
+            print("\n====== Whois Domain Lookup ======")
+            print("  Domain:", domain)
+            print("    Registrar:", whois_info.registrar)
+            print("    Creation Date:", whois_info.creation_date)
+            print("    Expiration Date:", whois_info.expiration_date)
+            print("    Name Servers:", whois_info.name_servers)
+            print("    Status:", whois_info.status)
+            print("    Email:", whois_info.emails)
+            print("    Organization:", whois_info.org)
+            print("    Address:", whois_info.address)
+            print("    City:", whois_info.city)
+            print("    State:", whois_info.state)
+            print("    Zipcode:", whois_info.zipcode)
+            print("    Country:", whois_info.country) in domains_set
+        except whois.parser.PywhoisError:
+            print("\nNothing returned from WHOIS for that Domain")
+            pass
+
+def csv_search(registrar_set):
+    # Open the CSV file and make it a reader object (part of the csv module)
+    with open('registrar.csv', 'r', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        csv_registrars = []
+        
+        rows = list(reader)  # Store all rows
+        csv_registrars = [row[0] for row in rows]  # Get first column of each row
+
+        for registrar in registrar_set:
+            closest_matches = get_close_matches(registrar, csv_registrars, n=1, cutoff=0.6) #similarity threshold 0-1 with 1 requiring the highest similarity
+
+            if closest_matches:
+                for row in rows:
+                    if row[0] == closest_matches[0]:
+                        print("===============================\n\nRegistrar searched: ", registrar)
+                        print("Closest Match:      ", closest_matches[0])
+                        print("===============================\n\n")
+                        # Remove the outer for loop here - it was causing the duplicate prints
+                        for detail in row:
+                            print(detail)
+                        break  # Add this to exit after finding the match
+    
+    print("\n====== Registrars Found in Email ======")
+    for registrar in registrar_set:
+        print("  ", registrar)
+    print("\n This tool is not always accurate, ensure the Registrar name matches the results")    
+    print(" Check search.org for matches if you have no returns for a registrar")    
+    print("\n\n\n\n\n               *************\n               Registrar Information current as of 11/18/2024\n               Please verify information on search.org\n               *************")
+
+def save_text(filename_text, ip_addresses_set, domains_set):
+    global registrar_set
+    print("Be patient, can take up to a minute depending on how many registrars are found")
+    original_stdout = sys.stdout
+    with open(filename_text, 'w') as file:
+        sys.stdout = file
+        print_ipdomain(ip_addresses_set, domains_set)
+        who_is_print(domains_set, ip_addresses_set)
+        csv_search(registrar_set)
+        sys.stdout = original_stdout
+    print(f"\nOutput saved to {filename_text}")
+
+
 def main():
-#check if email file is imported using command line argument
+    global registrar_set
+    #check if email file is imported using command line argument
     if len(sys.argv) < 2:
         print("Usage: python3 emailbutcher.py filename.eml")
         sys.exit(1)
 
     #open file as command line argument and store file name 
-    file = open(sys.argv[1], "r")
+    file = open(sys.argv[1], "r", encoding='utf-8', errors='ignore')
     filename = sys.argv[1]
     filename_text = filename.replace('.eml', '.txt') #for saving output as text later
+    temp_text = []    # list to store all printed text that can be saved to a text file. prevents running all of the functions again
 
     # parse email
     email_parse = parser.Parser()
@@ -124,14 +197,19 @@ def main():
             if domains_set == set():
                 print_ipdomain(ip_addresses_set, domains_set)
                 who_is_search(domains_set, ip_addresses_set)
+                who_is_print(domains_set, ip_addresses_set)
             else:
-                who_is_search(domains_set, ip_addresses_set)
+                who_is_print(domains_set, ip_addresses_set)
             continue
         if choice == "3":
-            print("Coming Soon")
+            if registrar_set == set():
+                registrar_set = who_is_search(domains_set, ip_addresses_set)
+                csv_search(registrar_set)
+            else:
+                csv_search(registrar_set)
             continue
         if choice == "4":
-            print("Coming Soon")
+            save_text(filename_text, ip_addresses_set, domains_set)
             continue
         if choice == "5":
             print("Exit")
