@@ -14,10 +14,6 @@ Python script that parses a downloaded email's header for IP and domain names. I
 
 > pip install python-pythonwhois
 
-### DNSpython
-
-> pip install dnspython 
-
 ## Deployment
 
 #### Place *.eml file in the same directory as emailbutcher.py
