@@ -6,6 +6,10 @@ Python script that parses a downloaded email's header for IP and domain names. I
 
 ## Pre-requisites
 
+### Registrar.csv  
+
+CSV file must be in the same directory as the script
+
 ### Python & PIP
 
 > sudo apt install python3 python3-pip
