@@ -103,7 +103,9 @@ def csv_search(registrar_set):
 
             if closest_matches:
                 for row in rows:
-                    if row[0] == closest_matches[0]:
+                    if row[0] == closest_matches[0]:                                    
+                        if registrar == "MarkMonitor, Inc.":   # Skip if the registrar is MarkMonitor, Inc.
+                            continue
                         print("===============================\n\nRegistrar searched: ", registrar)
                         print("Closest Match:      ", closest_matches[0])
                         print("===============================\n\n")
@@ -163,7 +165,7 @@ def main():
     #finds ip address by matching the pattern and being between 0-255 (https://uibakery.io/regex-library/ip-address-regex-python )
     #finds domain based on text after the "@" symbol
     ip_addr_search = r'\b(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b'
-    domain_search = r'@([\w.-]+\.[a-zA-Z]{2,})'  #regex. finds text after @ symbol including slashes, dots, hyphens. ensures at least two letters after the last dot
+    domain_search = r'@(?:[a-zA-Z0-9-]+\.)*([a-zA-Z0-9-]+\.[a-zA-Z]{2,3})(?:\s|$|[^\w.-])'  #regex. finds text after @ symbol including slashes, dots, hyphens. ensures at least two letters after the last dot
                    
     
     ip_addresses_set = set()    #initialize and use sets to prevent duplicates
