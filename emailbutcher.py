@@ -108,6 +108,13 @@ def csv_search(registrar_set):
                         for detail in row:
                             print(detail)
                         break  #exits search
+    print("\n====== Registrars Found in Email ======")
+    for registrar in registrar_set:
+        print("  ", registrar)
+    print("\n This tool is not always accurate, ensure the Registrar/ISP name matches the results")    
+    print(" Check search.org for matches if you have no returns for a registrar/ISP")    
+    print("\n\n\n\n\n               *************\n               Registrar/ISP Information current as of 11/18/2024\n               Please verify information on search.org\n               *************")
+
 
 def save_text(filename_text, ip_addresses_set, domains_set):
     global registrar_set
@@ -211,3 +218,12 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
