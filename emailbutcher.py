@@ -1,5 +1,7 @@
 import re                               # regular expression library to search for the IP and domain
 import whois                            # whois library to get information about the domain
+from ipwhois import IPWhois             # ipwhois library to get information about the IP address
+from ipwhois.exceptions import IPDefinedError  
 from email import parser                # email.parser library to get information about the domain
 import sys                              # sys library to open file as command line argument
 import csv                              # open csv and search for matching registrar and print out details
@@ -50,23 +52,17 @@ def who_is_print(domains_set, ip_addresses_set):
         registrar_set = who_is_search(domains_set, ip_addresses_set) # this will run the who_is_search function if it hasn't been done (for saving to txt)
     for ip_addr in ip_addresses_set:
         try:
-            whois_info = whois.whois(ip_addr)
+            ipwhois_info = IPWhois(ip_addr)
+            ipwhois_info = ipwhois_info.lookup_rdap()
             print("\n====== Whois IP Lookup ======")
             print("  IP:", ip_addr)
-            print("    Registrar:", whois_info.registrar)
-            print("    Creation Date:", whois_info.creation_date)
-            print("    Expiration Date:", whois_info.expiration_date)
-            print("    Name Servers:", whois_info.name_servers)
-            print("    Status:", whois_info.status)
-            print("    Email:", whois_info.emails)
-            print("    Organization:", whois_info.org)
-            print("    Address:", whois_info.address)
-            print("    City:", whois_info.city)
-            print("    State:", whois_info.state)
-            print("    Zipcode:", whois_info.zipcode)
-            print("    Country:", whois_info.country) in ip_addresses_set
-        except whois.parser.PywhoisError:
-            print("\nNothing returned from WHOIS for that IP")
+            print("    Network Name:", ipwhois_info.get('network', {}).get('name'))
+            print("    CIDR:", ipwhois_info.get('network', {}).get('cidr'))
+            print("    Country:", ipwhois_info.get('network', {}).get('country'))
+            print("    ASN:", ipwhois_info.get('asn'))
+            print("    ASN Description:", ipwhois_info.get('asn_description'))
+        except IPDefinedError:
+            print(f"Error: Unable to perform WHOIS lookup for {ip_addr}")
             pass
     for domain in domains_set:
         try:
@@ -117,13 +113,13 @@ def csv_search(registrar_set):
     print("\n====== Registrars Found in Email ======")
     for registrar in registrar_set:
         print("  ", registrar)
-    print("\n This tool is not always accurate, ensure the Registrar name matches the results")    
-    print(" Check search.org for matches if you have no returns for a registrar")    
-    print("\n\n\n\n\n               *************\n               Registrar Information current as of 11/18/2024\n               Please verify information on search.org\n               *************")
+    print("\n This tool is not always accurate, ensure the Registrar/ISP name matches the results")    
+    print(" Check search.org for matches if you have no returns for a registrar/ISP")    
+    print("\n\n\n\n\n               *************\n               Registrar/ISP Information current as of 11/18/2024\n               Please verify information on search.org\n               *************")
 
 def save_text(filename_text, ip_addresses_set, domains_set):
     global registrar_set
-    print("Be patient, can take up to a minute depending on how many registrars are found")
+    print("Be patient, can take up to a minute depending on how many registrars/ISP's are found")
     original_stdout = sys.stdout
     with open(filename_text, 'w') as file:
         sys.stdout = file
@@ -164,7 +160,7 @@ def main():
     # Iterate a search for IP and Domain to add to a set with the update method preventing duplicates
     #finds ip address by matching the pattern and being between 0-255 (https://uibakery.io/regex-library/ip-address-regex-python )
     #finds domain based on text after the "@" symbol
-    ip_addr_search = r'\b(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b'
+    ip_addr_search = r'(?<=\s)(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)(?!\d)'
     domain_search = r'@(?:[a-zA-Z0-9-]+\.)*([a-zA-Z0-9-]+\.[a-zA-Z]{2,3})(?:\s|$|[^\w.-])'  #regex. finds text after @ symbol including slashes, dots, hyphens. ensures at least two letters after the last dot
                    
     
@@ -223,3 +219,12 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
