@@ -29,7 +29,7 @@ def who_is_search(domains_set, ip_addresses_set):        # use the Domains from 
     registrar_set = set()
     for domain in domains_set:
         try:
-            whois_info = whois.whois(domain)
+            whois_info = whois.whois(domain)            
             if whois_info.registrar is not None:
                 registrar_set.add(whois_info.registrar)  #adds the registrar name to a set
         except whois.parser.PywhoisError:
@@ -105,17 +105,9 @@ def csv_search(registrar_set):
                         print("===============================\n\nRegistrar searched: ", registrar)
                         print("Closest Match:      ", closest_matches[0])
                         print("===============================\n\n")
-                        # Remove the outer for loop here - it was causing the duplicate prints
                         for detail in row:
                             print(detail)
-                        break  # Add this to exit after finding the match
-    
-    print("\n====== Registrars Found in Email ======")
-    for registrar in registrar_set:
-        print("  ", registrar)
-    print("\n This tool is not always accurate, ensure the Registrar/ISP name matches the results")    
-    print(" Check search.org for matches if you have no returns for a registrar/ISP")    
-    print("\n\n\n\n\n               *************\n               Registrar/ISP Information current as of 11/18/2024\n               Please verify information on search.org\n               *************")
+                        break  #exits search
 
 def save_text(filename_text, ip_addresses_set, domains_set):
     global registrar_set
@@ -219,12 +211,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
