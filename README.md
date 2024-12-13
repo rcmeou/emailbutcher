@@ -18,7 +18,7 @@ CSV file must be in the same directory as the script
 
 > pip install python-whois
 
-### PythonWhois
+### IPWhois
 
 > pip install ipwhois
 
