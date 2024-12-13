@@ -16,7 +16,11 @@ CSV file must be in the same directory as the script
 
 ### PythonWhois
 
-> pip install pythonwhois
+> pip install python-whois
+
+### PythonWhois
+
+> pip install ipwhois
 
 ## Deployment
 
